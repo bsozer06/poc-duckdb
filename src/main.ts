@@ -1,8 +1,8 @@
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import * as duckdb from '@duckdb/duckdb-wasm';
+import type { FeatureCollection } from 'geojson';
 
-// ── Tipler ──────────────────────────────────────────────────────────────────
 
 type DataSource = 'parquet' | 'csv';
 
@@ -15,21 +15,19 @@ interface CapitalRow {
   continent: string;
 }
 
-// MapLibre'nin Marker listesini map nesnesine bağlamak için genişletme
-interface ExtendedMap extends maplibregl.Map {
-  _markers?: maplibregl.Marker[];
-}
-
-// ── MapLibre ─────────────────────────────────────────────────────────────────
-
-const map: ExtendedMap = new maplibregl.Map({
+//  MapLibre 
+const map = new maplibregl.Map({
   container: 'map',
   style: 'https://demotiles.maplibre.org/style.json',
   center: [20, 20],
   zoom: 2,
 });
 
-// ── DuckDB-WASM ───────────────────────────────────────────────────────────────
+// Start both map 'load' and DuckDB init as independent Promises to avoid
+// a race condition; wait for both together at the end.
+const mapReady = new Promise<void>(resolve => map.once('load', () => resolve()));
+
+//  DuckDB-WASM 
 
 const JSDELIVR_BUNDLES = duckdb.getJsDelivrBundles();
 
@@ -46,51 +44,112 @@ async function initDuck(): Promise<void> {
   await db.instantiate(bundle.mainModule, bundle.pthreadWorker);
   conn = await db.connect();
 
-  status.textContent = 'Fetching files…';
+  status.textContent = 'Fetching files...';
 
-  // İki dosyayı paralel fetch et, WASM in-memory'e kaydet
-  const [parquetBuf, csvBuf] = await Promise.all([
+  // Fetch both files in parallel and register them in WASM in-memory storage
+  const [parquetBuf] = await Promise.all([
     fetch('data/capitals.parquet').then(r => r.arrayBuffer()),
-    fetch('data/capitals.csv').then(r => r.arrayBuffer()),
+    // fetch('data/capitals.csv').then(r => r.arrayBuffer()),
   ]);
 
   await db.registerFileBuffer('capitals.parquet', new Uint8Array(parquetBuf));
-  await db.registerFileBuffer('capitals.csv', new Uint8Array(csvBuf));
+  // await db.registerFileBuffer('capitals.csv', new Uint8Array(csvBuf));
 
-  // VIEW'lar – kaynak toggle'ı sadece `capitals` view'ını değiştirir
+  // VIEWs -- the source toggle only swaps the `capitals` view
   await conn.query(`CREATE VIEW capitals_parquet AS SELECT * FROM read_parquet('capitals.parquet')`);
-  await conn.query(`CREATE VIEW capitals_csv     AS SELECT * FROM read_csv_auto('capitals.csv')`);
-  await conn.query(`CREATE VIEW capitals         AS SELECT * FROM capitals_parquet`);
+  // await conn.query(`CREATE VIEW capitals_csv AS SELECT * FROM read_csv_auto('capitals.csv')`);
+  await conn.query(`CREATE VIEW capitals AS SELECT * FROM capitals_parquet`);
 
-  status.textContent = 'Ready ✓ (parquet)';
-  await runQuery();
+  status.textContent = 'Ready (parquet)';
 }
 
-// ── Kaynak değiştir ───────────────────────────────────────────────────────────
+//  GeoJSON layer setup (runs once after map load) 
+
+function setupLayers(): void {
+  // Source -- starts with an empty FeatureCollection
+  map.addSource('points', {
+    type: 'geojson',
+    data: { type: 'FeatureCollection', features: [] },
+  });
+
+  // 1) Circle layer -- rendered via WebGL, no DOM elements -> handles 1M points smoothly
+  map.addLayer({
+    id: 'points-circle',
+    type: 'circle',
+    source: 'points',
+    paint: {
+      'circle-radius': ['interpolate', ['linear'], ['zoom'], 2, 4, 8, 9],
+      'circle-color': '#89b4fa',
+      'circle-stroke-width': 1.5,
+      'circle-stroke-color': '#1e1e2e',
+      'circle-opacity': 0.85,
+    },
+  });
+
+  // 2) Symbol (label) layer -- show name at zoom >= 5
+  map.addLayer({
+    id: 'points-label',
+    type: 'symbol',
+    source: 'points',
+    minzoom: 5,
+    layout: {
+      'text-field': ['get', 'name'],
+      'text-size': 11,
+      'text-offset': [0, 1.2],
+      'text-anchor': 'top',
+      'text-allow-overlap': false,
+    },
+    paint: {
+      'text-color': '#cdd6f4',
+      'text-halo-color': '#1e1e2e',
+      'text-halo-width': 1.5,
+    },
+  });
+
+  // 3) Click -> popup (feature properties come directly from GeoJSON)
+  map.on('click', 'points-circle', e => {
+    const feature = e.features?.[0];
+    if (!feature) return;
+    const p = feature.properties as CapitalRow;
+    new maplibregl.Popup({ offset: 12 })
+      .setLngLat(e.lngLat)
+      .setHTML(`
+        <b>${p.name}</b><br>
+         ${p.country}<br>
+         ${p.continent}<br>
+         ${Number(p.population).toLocaleString()}
+      `)
+      .addTo(map);
+  });
+
+  map.on('mouseenter', 'points-circle', () => { map.getCanvas().style.cursor = 'pointer'; });
+  map.on('mouseleave', 'points-circle', () => { map.getCanvas().style.cursor = ''; });
+}
+
+//  Switch data source 
 
 async function setSource(src: DataSource): Promise<void> {
   if (!conn) return;
   currentSource = src;
 
   getEl('btn-parquet').classList.toggle('active', src === 'parquet');
-  getEl('btn-csv').classList.toggle('active', src === 'csv');
+  // getEl('btn-csv').classList.toggle('active', src === 'csv');
 
   await conn.query('DROP VIEW IF EXISTS capitals');
   const view = src === 'parquet' ? 'capitals_parquet' : 'capitals_csv';
   await conn.query(`CREATE VIEW capitals AS SELECT * FROM ${view}`);
 
-  getEl('status').textContent = `Switched → ${src}`;
+  getEl('status').textContent = `Switched -> ${src}`;
   await runQuery();
 }
 
-// ── Sorgu & harita render ─────────────────────────────────────────────────────
-
+//  Query & map render 
 async function runQuery(): Promise<void> {
   if (!conn) return;
 
   const sql    = (getEl('sql') as HTMLInputElement).value.trim();
   const status = getEl('status');
-  status.textContent = 'Running…';
+  status.textContent = 'Running...';
 
   try {
     const t0     = performance.now();
@@ -98,46 +157,29 @@ async function runQuery(): Promise<void> {
     const ms     = (performance.now() - t0).toFixed(1);
     const rows   = result.toArray().map(r => r.toJSON()) as CapitalRow[];
 
-    // Önceki marker'ları kaldır
-    map._markers?.forEach(m => m.remove());
-    map._markers = [];
+    // Convert all rows into a single GeoJSON FeatureCollection.
+    // setData() -> single WebGL draw call, zero DOM manipulation.
+    const geojson: FeatureCollection = {
+      type: 'FeatureCollection',
+      features: rows
+        .filter(row => row.lng != null && row.lat != null)
+        .map(row => ({
+          type: 'Feature' as const,
+          geometry: { type: 'Point' as const, coordinates: [Number(row.lng), Number(row.lat)] },
+          properties: row,
+        })),
+    };
 
-    rows.forEach(row => {
-      if (row.lng == null || row.lat == null) return;
+    (map.getSource('points') as maplibregl.GeoJSONSource)?.setData(geojson);
 
-      const el = document.createElement('div');
-      el.style.cssText = `
-        background:#89b4fa; color:#1e1e2e; border-radius:50%;
-        width:34px; height:34px; display:flex; align-items:center;
-        justify-content:center; font-weight:700; font-size:10px;
-        cursor:pointer; border:2px solid #fff; box-shadow:0 1px 4px #0006;
-      `;
-      el.textContent = row.name?.slice(0, 3) ?? '?';
-      el.title       = `${row.name} (${row.country}) — ${row.population.toLocaleString()}`;
-
-      const marker = new maplibregl.Marker({ element: el })
-        .setLngLat([Number(row.lng), Number(row.lat)])
-        .setPopup(
-          new maplibregl.Popup({ offset: 20 }).setHTML(`
-            <b>${row.name}</b><br>
-            🌍 ${row.country}<br>
-            🗺 ${row.continent}<br>
-            👥 ${row.population.toLocaleString()}
-          `)
-        )
-        .addTo(map);
-
-      map._markers!.push(marker);
-    });
-
-    status.textContent = `${rows.length} row(s) · ${ms} ms · ${currentSource}`;
+    status.textContent = `${rows.length} row(s)  ${ms} ms  ${currentSource}`;
   } catch (err) {
-    status.textContent = 'Error ✗';
+    status.textContent = 'Error';
     alert((err as Error).message);
   }
 }
 
-// ── Yardımcılar ───────────────────────────────────────────────────────────────
+//  Helpers 
 
 function getEl(id: string): HTMLElement {
   const el = document.getElementById(id);
@@ -145,13 +187,18 @@ function getEl(id: string): HTMLElement {
   return el;
 }
 
-// onclick="..." ile çağrılabiliyor olması için window'a bağla
+// Expose functions to window so they can be called from onclick="..." attributes
 (window as Window & typeof globalThis & Record<string, unknown>).setSource = setSource;
 (window as Window & typeof globalThis & Record<string, unknown>).runQuery  = runQuery;
 
-// Enter ile de çalıştır
+// Also trigger query on Enter key
 (getEl('sql') as HTMLInputElement).addEventListener('keydown', (e: KeyboardEvent) => {
   if (e.key === 'Enter') void runQuery();
 });
 
-void initDuck();
+// Run map load and DuckDB init in parallel;
+// once both are done, set up the layers and run the initial query.
+void Promise.all([mapReady, initDuck()]).then(async () => {
+  setupLayers();
+  await runQuery();
+});

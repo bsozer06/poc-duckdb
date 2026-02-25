@@ -1,109 +1,105 @@
-# 🦆 DuckDB + MapLibre PoC
+# DuckDB + MapLibre PoC
 
-Tarayıcıda **DuckDB-WASM** ile **Parquet / CSV** dosyalarını okuyup sorgu sonuçlarını **MapLibre GL JS** haritasında görselleştiren minimal PoC.
+A minimal PoC that reads **Parquet / CSV** files in the browser using **DuckDB-WASM** and visualizes query results on a **MapLibre GL JS** map.
 
-Proje **TypeScript** ile yazılmıştır; **Vite** ile derlenir ve servis edilir.
+The project is written in **TypeScript** and built/served with **Vite**.
 
-## Proje Yapısı
+## Project Structure
 
 ```
 poc-duckdb/
-├── src/
-│   └── main.ts          # Uygulama giriş noktası (TypeScript)
-├── data/
-│   ├── capitals.csv     # 194 dünya başkenti (CSV)
-│   └── capitals.parquet # 194 dünya başkenti (Parquet – kolonar)
-├── index.html           # HTML kabuğu – Vite entry point
-├── vite.config.ts       # Vite yapılandırması (COOP/COEP başlıkları)
-├── tsconfig.json        # TypeScript yapılandırması
-├── generate.cjs         # Başkent verisini CSV/Parquet'e yazan Node script
-└── package.json
+ src/
+    main.ts          # Application entry point (TypeScript)
+ data/
+    capitals.csv     # 194 world capitals (CSV)
+    capitals.parquet # 194 world capitals (Parquet  columnar)
+ index.html           # HTML shell  Vite entry point
+ vite.config.ts       # Vite config (COOP/COEP headers)
+ tsconfig.json        # TypeScript config
+ generate.cjs         # Node script that writes capital data to CSV/Parquet
+ package.json
 ```
 
-## Kullanılan Teknolojiler
+## Tech Stack
 
-| Paket | Versiyon | Kullanım |
+| Package | Version | Purpose |
 |---|---|---|
-| [vite](https://vitejs.dev/) | ^6 | Build aracı + dev sunucu |
-| [typescript](https://www.typescriptlang.org/) | ^5.7 | Dil |
-| [@duckdb/duckdb-wasm](https://www.npmjs.com/package/@duckdb/duckdb-wasm) | ^1.29 | Tarayıcıda in-memory SQL motoru |
-| [maplibre-gl](https://maplibre.org/) | ^4 | Harita render |
-| [duckdb](https://www.npmjs.com/package/duckdb) *(devDep)* | ^1.1 | Node.js'te CSV/Parquet üretimi |
+| [vite](https://vitejs.dev/) | ^6 | Build tool + dev server |
+| [typescript](https://www.typescriptlang.org/) | ^5.7 | Language |
+| [@duckdb/duckdb-wasm](https://www.npmjs.com/package/@duckdb/duckdb-wasm) | ^1.29 | In-browser in-memory SQL engine |
+| [maplibre-gl](https://maplibre.org/) | ^4 | Map rendering |
+| [duckdb](https://www.npmjs.com/package/duckdb) *(devDep)* | ^1.1 | CSV/Parquet generation in Node.js |
 
-## Başlangıç
+## Getting Started
 
-### 1 – Bağımlılıkları kur
+### 1  Install dependencies
 
 ```bash
 npm install
 ```
 
-### 2 – Veri dosyalarını oluştur
+### 2  Generate data files
 
 ```bash
 npm run generate
-# veya doğrudan: node generate.cjs
+# or directly: node generate.cjs
 ```
 
-`data/capitals.csv` ve `data/capitals.parquet` dosyaları oluşturulur.
+This creates `data/capitals.csv` and `data/capitals.parquet`.
 
-### 3 – Geliştirme sunucusunu başlat
+### 3  Start the development server
 
 ```bash
 npm run dev
-# → http://localhost:3333
+#  http://localhost:3333
 ```
 
-> DuckDB-WASM, **SharedArrayBuffer** kullandığından `file://` protokolü çalışmaz.  
-> `vite.config.ts` içinde `Cross-Origin-Opener-Policy: same-origin` ve  
-> `Cross-Origin-Embedder-Policy: require-corp` başlıkları otomatik eklenir.
+> DuckDB-WASM relies on **SharedArrayBuffer**, so the `file://` protocol does not work.  
+> `vite.config.ts` automatically adds the `Cross-Origin-Opener-Policy: same-origin` and  
+> `Cross-Origin-Embedder-Policy: require-corp` headers.
 
-### 4 – Production build (opsiyonel)
+### 4  Production build (optional)
 
 ```bash
-npm run build   # dist/ klasörüne çıktı üretir
-npm run preview # build çıktısını önizle
+npm run build   # outputs to dist/
+npm run preview # preview the build output
 ```
 
-## Kullanım
+## Usage
 
-Uygulama açıldığında Parquet dosyası otomatik yüklenir ve varsayılan sorgu çalışır.
+When the app opens, the Parquet file is loaded automatically and the default query runs.
 
-- **📦 Parquet / 📄 CSV** butonları ile veri kaynağını anlık değiştirebilirsin
-- SQL kutusuna istediğin sorguyu yazıp **▶ Run** ya da `Enter` ile çalıştırabilirsin
-- Harita üzerindeki marker'lara tıklayınca popup açılır (başkent, ülke, kıta, nüfus)
+- Use the **Parquet / CSV** buttons to switch the data source on the fly
+- Type any SQL query in the input box and run it with **Run** or `Enter`
+- Click a marker on the map to open a popup (capital, country, continent, population)
 
-### Örnek Sorgular
+### Example Queries
 
 ```sql
--- Tüm başkentler
+-- All capitals
 SELECT * FROM capitals
 
--- En kalabalık 10 başkent
-SELECT name, country, population FROM capitals ORDER BY population DESC LIMIT 10
+-- Top 10 most populous capitals
+SELECT * FROM capitals ORDER BY population DESC LIMIT 10
 
--- Kıtaya göre özet
-SELECT continent, COUNT(*) AS cnt, AVG(population)::INT AS avg_pop
-FROM capitals GROUP BY continent ORDER BY cnt DESC
-
--- Sadece Avrupa
+-- Europe only
 SELECT * FROM capitals WHERE continent = 'Europe'
 
--- Nüfusu 5 milyonun üzerindekiler
+-- Population over 5 million
 SELECT * FROM capitals WHERE population > 5000000
 ```
 
-## Mimari — Veri Akışı
+## Architecture  Data Flow
 
 ```
 generate.cjs (Node + duckdb)
-    └── JS array → DuckDB in-memory tablo
-            ├── COPY TO capitals.csv
-            └── COPY TO capitals.parquet
+     JS array  DuckDB in-memory table
+             COPY TO capitals.csv
+             COPY TO capitals.parquet
 
 index.html + src/main.ts (Browser + Vite + TypeScript + duckdb-wasm)
-    └── fetch('data/capitals.parquet') → Uint8Array
-            └── db.registerFileBuffer(...)
-                    └── CREATE VIEW capitals AS SELECT * FROM read_parquet(...)
-                            └── conn.query(sql) → rows → MapLibre markers
+     fetch('data/capitals.parquet')  Uint8Array
+             db.registerFileBuffer(...)
+                     CREATE VIEW capitals AS SELECT * FROM read_parquet(...)
+                             conn.query(sql)  rows  MapLibre markers
 ```
