@@ -147,7 +147,19 @@ async function setSource(src: DataSource): Promise<void> {
 async function runQuery(): Promise<void> {
   if (!conn) return;
 
-  const sql    = (getEl('sql') as HTMLInputElement).value.trim();
+  const sql = (getEl('sql') as HTMLInputElement).value.trim();
+
+  if (!/^\s*SELECT\b/i.test(sql)) {
+    alert('Only SELECT queries are allowed.');
+    return;
+  }
+
+  const forbidden = /\b(DROP|CREATE|INSERT|UPDATE|DELETE|ALTER|TRUNCATE)\b/i;
+  if (forbidden.test(sql)) {
+    alert('DDL/DML statements are not allowed.');
+    return;
+  }
+
   const status = getEl('status');
   status.textContent = 'Running...';
 
