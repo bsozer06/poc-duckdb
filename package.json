@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@duckdb/duckdb-wasm": "^1.29.0",
+    "flatbush": "^4.5.0",
     "maplibre-gl": "^4.0.0"
   },
   "devDependencies": {
