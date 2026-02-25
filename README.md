@@ -2,25 +2,33 @@
 
 Tarayıcıda **DuckDB-WASM** ile **Parquet / CSV** dosyalarını okuyup sorgu sonuçlarını **MapLibre GL JS** haritasında görselleştiren minimal PoC.
 
+Proje **TypeScript** ile yazılmıştır; **Vite** ile derlenir ve servis edilir.
+
 ## Proje Yapısı
 
 ```
 poc-duckdb/
-├── index.html          # Tek sayfalık uygulama (DuckDB-WASM + MapLibre)
-├── generate.js         # Başkent verisini CSV ve Parquet'e yazan Node script
-├── package.json
-└── data/
-    ├── capitals.csv     # 194 dünya başkenti (CSV)
-    └── capitals.parquet # 194 dünya başkenti (Parquet – kolonar)
+├── src/
+│   └── main.ts          # Uygulama giriş noktası (TypeScript)
+├── data/
+│   ├── capitals.csv     # 194 dünya başkenti (CSV)
+│   └── capitals.parquet # 194 dünya başkenti (Parquet – kolonar)
+├── index.html           # HTML kabuğu – Vite entry point
+├── vite.config.ts       # Vite yapılandırması (COOP/COEP başlıkları)
+├── tsconfig.json        # TypeScript yapılandırması
+├── generate.cjs         # Başkent verisini CSV/Parquet'e yazan Node script
+└── package.json
 ```
 
 ## Kullanılan Teknolojiler
 
 | Paket | Versiyon | Kullanım |
 |---|---|---|
-| [duckdb](https://www.npmjs.com/package/duckdb) | ^1.1.3 | Node.js'te CSV/Parquet üretimi |
-| [@duckdb/duckdb-wasm](https://www.npmjs.com/package/@duckdb/duckdb-wasm) | 1.29.0 | Tarayıcıda in-memory SQL motoru |
-| [MapLibre GL JS](https://maplibre.org/) | 4 | Harita render |
+| [vite](https://vitejs.dev/) | ^6 | Build aracı + dev sunucu |
+| [typescript](https://www.typescriptlang.org/) | ^5.7 | Dil |
+| [@duckdb/duckdb-wasm](https://www.npmjs.com/package/@duckdb/duckdb-wasm) | ^1.29 | Tarayıcıda in-memory SQL motoru |
+| [maplibre-gl](https://maplibre.org/) | ^4 | Harita render |
+| [duckdb](https://www.npmjs.com/package/duckdb) *(devDep)* | ^1.1 | Node.js'te CSV/Parquet üretimi |
 
 ## Başlangıç
 
@@ -33,22 +41,29 @@ npm install
 ### 2 – Veri dosyalarını oluştur
 
 ```bash
-node generate.js
-# veya
 npm run generate
+# veya doğrudan: node generate.cjs
 ```
 
 `data/capitals.csv` ve `data/capitals.parquet` dosyaları oluşturulur.
 
-### 3 – Local sunucu başlat
+### 3 – Geliştirme sunucusunu başlat
 
 ```bash
-npm run serve
+npm run dev
 # → http://localhost:3333
 ```
 
-> DuckDB-WASM, SharedArrayBuffer gerektirdiğinden `file://` protokolü çalışmaz.  
-> Bir HTTP sunucusu zorunludur.
+> DuckDB-WASM, **SharedArrayBuffer** kullandığından `file://` protokolü çalışmaz.  
+> `vite.config.ts` içinde `Cross-Origin-Opener-Policy: same-origin` ve  
+> `Cross-Origin-Embedder-Policy: require-corp` başlıkları otomatik eklenir.
+
+### 4 – Production build (opsiyonel)
+
+```bash
+npm run build   # dist/ klasörüne çıktı üretir
+npm run preview # build çıktısını önizle
+```
 
 ## Kullanım
 
@@ -81,12 +96,12 @@ SELECT * FROM capitals WHERE population > 5000000
 ## Mimari — Veri Akışı
 
 ```
-generate.js (Node + duckdb)
+generate.cjs (Node + duckdb)
     └── JS array → DuckDB in-memory tablo
             ├── COPY TO capitals.csv
             └── COPY TO capitals.parquet
 
-index.html (Browser + duckdb-wasm)
+index.html + src/main.ts (Browser + Vite + TypeScript + duckdb-wasm)
     └── fetch('data/capitals.parquet') → Uint8Array
             └── db.registerFileBuffer(...)
                     └── CREATE VIEW capitals AS SELECT * FROM read_parquet(...)

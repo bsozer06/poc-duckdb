@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8" />
   <title>DuckDB + MapLibre PoC</title>
-  <link href="https://unpkg.com/maplibre-gl@4/dist/maplibre-gl.css" rel="stylesheet" />
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: sans-serif; display: flex; flex-direction: column; height: 100vh; }
@@ -65,122 +64,6 @@
 
 <div id="map"></div>
 
-<script src="https://unpkg.com/maplibre-gl@4/dist/maplibre-gl.js"></script>
-<script type="module">
-import * as duckdb from "https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.29.0/+esm";
-
-// ---------- MapLibre ----------
-const map = new maplibregl.Map({
-  container: "map",
-  style: "https://demotiles.maplibre.org/style.json",
-  center: [20, 20],
-  zoom: 2,
-});
-
-// ---------- DuckDB-WASM ----------
-const JSDELIVR = duckdb.selectBundle(duckdb.getJsDelivrBundles());
-let db, conn;
-let currentSource = "parquet"; // 'parquet' | 'csv'
-
-async function initDuck() {
-  const status = document.getElementById("status");
-  const bundle = await JSDELIVR;
-  const worker = await duckdb.createWorker(bundle.mainWorker);
-  db = new duckdb.AsyncDuckDB(new duckdb.ConsoleLogger(), worker);
-  await db.instantiate(bundle.mainModule, bundle.pthreadWorker);
-  conn = await db.connect();
-
-  status.textContent = "Fetching files…";
-
-  // Parquet ve CSV dosyalarını fetch edip DuckDB-WASM'a kaydet
-  const [parquetBuf, csvBuf] = await Promise.all([
-    fetch("data/capitals.parquet").then(r => r.arrayBuffer()),
-    // fetch("data/capitals.csv").then(r => r.arrayBuffer()),
-  ]);
-
-  await db.registerFileBuffer("capitals.parquet", new Uint8Array(parquetBuf));
-//   await db.registerFileBuffer("capitals.csv",     new Uint8Array(csvBuf));
-
-  // VIEW'lar oluştur – kaynak değişince sadece view değiştirilir
-  await conn.query(`CREATE VIEW capitals_parquet AS SELECT * FROM read_parquet('capitals.parquet')`);
-//   await conn.query(`CREATE VIEW capitals_csv     AS SELECT * FROM read_csv_auto('capitals.csv')`);
-  await conn.query(`CREATE VIEW capitals         AS SELECT * FROM capitals_parquet`);
-
-  status.textContent = "Ready ✓ (parquet)";
-  runQuery();
-}
-
-// ---------- kaynak değiştir ----------
-window.setSource = async function(src) {
-  if (!conn) return;
-  currentSource = src;
-  document.getElementById("btn-parquet").classList.toggle("active", src === "parquet");
-  document.getElementById("btn-csv").classList.toggle("active",     src === "csv");
-
-  await conn.query("DROP VIEW IF EXISTS capitals");
-  if (src === "parquet") {
-    await conn.query("CREATE VIEW capitals AS SELECT * FROM capitals_parquet");
-  } else {
-    await conn.query("CREATE VIEW capitals AS SELECT * FROM capitals_csv");
-  }
-  document.getElementById("status").textContent = `Switched → ${src}`;
-  runQuery();
-};
-
-// ---------- sorgu & render ----------
-window.runQuery = async function () {
-  if (!conn) return;
-  const sql    = document.getElementById("sql").value.trim();
-  const status = document.getElementById("status");
-  status.textContent = "Running…";
-
-  try {
-    const t0     = performance.now();
-    const result = await conn.query(sql);
-    const ms     = (performance.now() - t0).toFixed(1);
-    const rows   = result.toArray().map(r => r.toJSON());
-
-    // Eski marker'ları temizle
-    map._markers?.forEach(m => m.remove());
-    map._markers = [];
-
-    rows.forEach(row => {
-      if (row.lng == null || row.lat == null) return;
-      const el = document.createElement("div");
-      el.style.cssText = `
-        background:#89b4fa; color:#1e1e2e; border-radius:50%;
-        width:34px; height:34px; display:flex; align-items:center;
-        justify-content:center; font-weight:700; font-size:10px;
-        cursor:pointer; border:2px solid #fff; box-shadow:0 1px 4px #0006;
-      `;
-      el.textContent   = (row.name ?? "?").slice(0, 3);
-      el.title         = `${row.name} (${row.country}) — ${Number(row.population).toLocaleString()}`;
-
-      const m = new maplibregl.Marker({ element: el })
-        .setLngLat([Number(row.lng), Number(row.lat)])
-        .setPopup(new maplibregl.Popup({ offset: 20 }).setHTML(`
-          <b>${row.name}</b><br>
-          🌍 ${row.country ?? ""}<br>
-          🗺 ${row.continent ?? ""}<br>
-          👥 ${Number(row.population).toLocaleString()}
-        `))
-        .addTo(map);
-      map._markers.push(m);
-    });
-
-    status.textContent = `${rows.length} row(s) · ${ms} ms · ${currentSource}`;
-  } catch (e) {
-    status.textContent = "Error ✗";
-    alert(e.message);
-  }
-};
-
-// Enter ile de çalıştır
-document.getElementById("sql").addEventListener("keydown", e => {
-  if (e.key === "Enter") runQuery();
-});
-
-initDuck();
-</script>
+<script type="module" src="/src/main.ts"></script>
 </body>
 </html>
