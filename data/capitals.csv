@@ -1,0 +1,195 @@
+name,country,lat,lng,population,continent
+Algiers,Algeria,36.74,3.06,3415811,Africa
+Luanda,Angola,-8.84,13.23,8330000,Africa
+Porto-Novo,Benin,6.49,2.63,264320,Africa
+Gaborone,Botswana,-24.65,25.91,231626,Africa
+Ouagadougou,Burkina Faso,12.36,-1.53,2780000,Africa
+Bujumbura,Burundi,-3.38,29.36,1144000,Africa
+Yaounde,Cameroon,3.87,11.52,3900000,Africa
+Praia,Cape Verde,14.93,-23.51,131719,Africa
+Bangui,Central African Republic,4.36,18.55,889231,Africa
+N'Djamena,Chad,12.11,15.04,1653000,Africa
+Moroni,Comoros,-11.7,43.25,60200,Africa
+Kinshasa,DR Congo,-4.32,15.32,15628085,Africa
+Brazzaville,Republic of Congo,-4.27,15.28,2388000,Africa
+Djibouti,Djibouti,11.59,43.15,562000,Africa
+Cairo,Egypt,30.06,31.25,21322750,Africa
+Malabo,Equatorial Guinea,3.75,8.78,187302,Africa
+Asmara,Eritrea,15.33,38.93,963000,Africa
+Addis Ababa,Ethiopia,9.03,38.74,3638000,Africa
+Libreville,Gabon,0.39,9.45,797003,Africa
+Banjul,Gambia,13.45,-16.58,31356,Africa
+Accra,Ghana,5.56,-0.2,2291352,Africa
+Conakry,Guinea,9.54,-13.68,1767200,Africa
+Bissau,Guinea-Bissau,11.86,-15.6,492004,Africa
+Yamoussoukro,Ivory Coast,6.82,-5.28,212670,Africa
+Nairobi,Kenya,-1.29,36.82,4397073,Africa
+Maseru,Lesotho,-29.32,27.48,330760,Africa
+Monrovia,Liberia,6.3,-10.8,1418000,Africa
+Tripoli,Libya,32.9,13.18,1158000,Africa
+Antananarivo,Madagascar,-18.91,47.54,3058453,Africa
+Lilongwe,Malawi,-13.97,33.79,1077116,Africa
+Bamako,Mali,12.65,-8.0,2715000,Africa
+Nouakchott,Mauritania,18.08,-15.97,1205000,Africa
+Port Louis,Mauritius,-20.16,57.5,149194,Africa
+Rabat,Morocco,34.02,-6.85,577827,Africa
+Maputo,Mozambique,-25.97,32.58,1101170,Africa
+Windhoek,Namibia,-22.56,17.08,431000,Africa
+Niamey,Niger,13.51,2.11,1267000,Africa
+Abuja,Nigeria,9.07,7.4,3464000,Africa
+Kigali,Rwanda,-1.94,30.06,1132686,Africa
+Sao Tome,São Tomé and Príncipe,0.34,6.73,71868,Africa
+Dakar,Senegal,14.69,-17.44,3137196,Africa
+Victoria,Seychelles,-4.62,55.45,27708,Africa
+Freetown,Sierra Leone,8.49,-13.23,1134000,Africa
+Mogadishu,Somalia,2.05,45.34,2587000,Africa
+Pretoria,South Africa,-25.74,28.19,2921488,Africa
+Juba,South Sudan,4.86,31.6,525953,Africa
+Khartoum,Sudan,15.55,32.53,5534000,Africa
+Mbabane,Eswatini,-26.32,31.14,68000,Africa
+Dodoma,Tanzania,-6.17,35.74,410956,Africa
+Lome,Togo,6.14,1.22,837437,Africa
+Tunis,Tunisia,36.82,10.17,638845,Africa
+Kampala,Uganda,0.34,32.58,1680000,Africa
+Lusaka,Zambia,-15.42,28.28,2787978,Africa
+Harare,Zimbabwe,-17.83,31.05,1542813,Africa
+Kabul,Afghanistan,34.53,69.17,4601789,Asia
+Yerevan,Armenia,40.18,44.51,1093485,Asia
+Baku,Azerbaijan,40.41,49.87,2286200,Asia
+Manama,Bahrain,26.21,50.59,153395,Asia
+Dhaka,Bangladesh,23.72,90.41,10356500,Asia
+Thimphu,Bhutan,27.47,89.64,114551,Asia
+Bandar Seri Begawan,Brunei,4.94,114.95,100700,Asia
+Phnom Penh,Cambodia,11.56,104.92,1573544,Asia
+Beijing,China,39.91,116.39,21893095,Asia
+Tbilisi,Georgia,41.69,44.83,1171100,Asia
+New Delhi,India,28.61,77.23,32941000,Asia
+Jakarta,Indonesia,-6.21,106.84,10770487,Asia
+Tehran,Iran,35.69,51.42,9259009,Asia
+Baghdad,Iraq,33.34,44.4,7348000,Asia
+Jerusalem,Israel,31.77,35.22,936425,Asia
+Tokyo,Japan,35.69,139.69,13960000,Asia
+Amman,Jordan,31.96,35.95,4007526,Asia
+Nur-Sultan,Kazakhstan,51.18,71.45,1136000,Asia
+Kuwait City,Kuwait,29.37,47.98,340000,Asia
+Bishkek,Kyrgyzstan,42.87,74.59,1012500,Asia
+Vientiane,Laos,17.97,102.6,948477,Asia
+Beirut,Lebanon,33.89,35.5,2385649,Asia
+Kuala Lumpur,Malaysia,3.14,101.69,1982112,Asia
+Male,Maldives,4.17,73.51,133412,Asia
+Ulaanbaatar,Mongolia,47.91,106.88,1466000,Asia
+Naypyidaw,Myanmar,19.76,96.08,924608,Asia
+Kathmandu,Nepal,27.71,85.32,1442271,Asia
+Muscat,Oman,23.61,58.59,1421409,Asia
+Islamabad,Pakistan,33.72,73.04,1095064,Asia
+Manila,Philippines,14.6,120.98,1846513,Asia
+Doha,Qatar,25.28,51.53,796947,Asia
+Riyadh,Saudi Arabia,24.69,46.72,7231447,Asia
+Singapore,Singapore,1.35,103.82,5850342,Asia
+Seoul,South Korea,37.57,126.98,9765623,Asia
+Colombo,Sri Lanka,6.93,79.85,752993,Asia
+Damascus,Syria,33.51,36.29,2503000,Asia
+Dushanbe,Tajikistan,38.56,68.77,863400,Asia
+Bangkok,Thailand,13.75,100.52,10539415,Asia
+Dili,Timor-Leste,-8.56,125.58,222323,Asia
+Ashgabat,Turkmenistan,37.95,58.38,1031992,Asia
+Ankara,Turkey,39.93,32.85,5700000,Asia
+Abu Dhabi,UAE,24.45,54.38,1483000,Asia
+Tashkent,Uzbekistan,41.3,69.27,2571668,Asia
+Hanoi,Vietnam,21.03,105.85,8053663,Asia
+Sanaa,Yemen,15.37,44.19,2957000,Asia
+Pyongyang,North Korea,39.03,125.75,3038000,Asia
+Tirana,Albania,41.33,19.82,418495,Europe
+Andorra la Vella,Andorra,42.51,1.52,22256,Europe
+Vienna,Austria,48.21,16.37,1931593,Europe
+Minsk,Belarus,53.9,27.57,1982444,Europe
+Brussels,Belgium,50.85,4.35,1209000,Europe
+Sarajevo,Bosnia and Herzegovina,43.85,18.36,275524,Europe
+Sofia,Bulgaria,42.7,23.32,1307376,Europe
+Zagreb,Croatia,45.81,15.98,806341,Europe
+Nicosia,Cyprus,35.17,33.36,349000,Europe
+Prague,Czech Republic,50.08,14.44,1335084,Europe
+Copenhagen,Denmark,55.68,12.57,794128,Europe
+Tallinn,Estonia,59.44,24.75,454024,Europe
+Helsinki,Finland,60.17,24.94,648042,Europe
+Paris,France,48.86,2.35,2161000,Europe
+Berlin,Germany,52.52,13.4,3644826,Europe
+Athens,Greece,37.98,23.73,3153000,Europe
+Budapest,Hungary,47.5,19.04,1752286,Europe
+Reykjavik,Iceland,64.14,-21.93,131136,Europe
+Dublin,Ireland,53.33,-6.25,1388000,Europe
+Rome,Italy,41.89,12.48,4355725,Europe
+Pristina,Kosovo,42.67,21.17,216870,Europe
+Riga,Latvia,56.95,24.11,605802,Europe
+Vaduz,Liechtenstein,47.14,9.52,5765,Europe
+Vilnius,Lithuania,54.69,25.28,536366,Europe
+Luxembourg,Luxembourg,49.61,6.13,125000,Europe
+Valletta,Malta,35.9,14.51,6794,Europe
+Chisinau,Moldova,47.0,28.86,532513,Europe
+Monaco,Monaco,43.73,7.42,36297,Europe
+Podgorica,Montenegro,42.44,19.26,186087,Europe
+Amsterdam,Netherlands,52.37,4.9,821752,Europe
+Skopje,North Macedonia,42.0,21.43,544086,Europe
+Oslo,Norway,59.91,10.74,673469,Europe
+Warsaw,Poland,52.23,21.01,1793579,Europe
+Lisbon,Portugal,38.72,-9.14,564657,Europe
+Bucharest,Romania,44.43,26.1,1803425,Europe
+Moscow,Russia,55.75,37.62,12506468,Europe
+San Marino,San Marino,43.94,12.46,4493,Europe
+Belgrade,Serbia,44.8,20.46,1688667,Europe
+Bratislava,Slovakia,48.15,17.11,475503,Europe
+Ljubljana,Slovenia,46.05,14.51,294054,Europe
+Madrid,Spain,40.42,-3.7,3305408,Europe
+Stockholm,Sweden,59.33,18.07,975551,Europe
+Bern,Switzerland,46.95,7.44,133883,Europe
+Kiev,Ukraine,50.45,30.52,2952301,Europe
+London,United Kingdom,51.51,-0.13,9002488,Europe
+Vatican City,Vatican,41.9,12.45,764,Europe
+Antigua,Antigua and Barbuda,17.12,-61.85,24226,North America
+Nassau,Bahamas,25.05,-77.35,274400,North America
+Bridgetown,Barbados,13.1,-59.62,110000,North America
+Belmopan,Belize,17.25,-88.77,16451,North America
+Ottawa,Canada,45.42,-75.7,1017449,North America
+San Jose,Costa Rica,9.93,-84.08,1000000,North America
+Havana,Cuba,23.13,-82.38,2141652,North America
+Roseau,Dominica,15.3,-61.39,16582,North America
+Santo Domingo,Dominican Republic,18.48,-69.9,3524000,North America
+San Salvador,El Salvador,13.69,-89.19,316090,North America
+St George's,Grenada,12.05,-61.75,33734,North America
+Guatemala City,Guatemala,14.64,-90.51,3015081,North America
+Port-au-Prince,Haiti,18.54,-72.34,2844000,North America
+Tegucigalpa,Honduras,14.1,-87.21,1444428,North America
+Kingston,Jamaica,17.99,-76.79,937700,North America
+Mexico City,Mexico,19.43,-99.13,9209944,North America
+Managua,Nicaragua,12.13,-86.28,958000,North America
+Panama City,Panama,8.99,-79.52,1500000,North America
+Basseterre,Saint Kitts and Nevis,17.3,-62.72,13000,North America
+Castries,Saint Lucia,14.0,-60.99,22000,North America
+Kingstown,Saint Vincent,13.16,-61.22,25000,North America
+Port of Spain,Trinidad and Tobago,10.65,-61.52,544000,North America
+Washington DC,United States,38.91,-77.04,689545,North America
+Buenos Aires,Argentina,-34.61,-58.38,3054300,South America
+Sucre,Bolivia,-19.04,-65.26,337187,South America
+Brasilia,Brazil,-15.78,-47.93,3015268,South America
+Santiago,Chile,-33.46,-70.65,5614000,South America
+Bogota,Colombia,4.71,-74.07,7412566,South America
+Quito,Ecuador,-0.23,-78.52,1607734,South America
+Georgetown,Guyana,6.8,-58.16,252700,South America
+Asuncion,Paraguay,-25.29,-57.65,524000,South America
+Lima,Peru,-12.06,-77.04,9751717,South America
+Paramaribo,Suriname,5.85,-55.2,240924,South America
+Montevideo,Uruguay,-34.9,-56.19,1381000,South America
+Caracas,Venezuela,10.48,-66.88,2900000,South America
+Canberra,Australia,-35.28,149.13,410301,Oceania
+Suva,Fiji,-18.14,178.44,100000,Oceania
+Tarawa,Kiribati,1.33,172.98,63017,Oceania
+Majuro,Marshall Islands,7.07,171.26,27797,Oceania
+Palikir,Micronesia,6.92,158.16,7000,Oceania
+Wellington,New Zealand,-41.29,174.78,412500,Oceania
+Melekeok,Palau,7.49,134.63,391,Oceania
+Port Moresby,Papua New Guinea,-9.44,147.18,364125,Oceania
+Apia,Samoa,-13.84,-171.77,37391,Oceania
+Honiara,Solomon Islands,-9.43,160.02,84520,Oceania
+Nuku'alofa,Tonga,-21.14,-175.22,23658,Oceania
+Funafuti,Tuvalu,-8.52,179.2,6090,Oceania
+Port Vila,Vanuatu,-17.73,168.32,51437,Oceania
