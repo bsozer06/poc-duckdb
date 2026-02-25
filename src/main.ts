@@ -1,7 +1,7 @@
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import * as duckdb from '@duckdb/duckdb-wasm';
-import type { FeatureCollection } from 'geojson';
+import { PointLayer } from './PointLayer';
 
 
 type DataSource = 'parquet' | 'csv';
@@ -35,6 +35,17 @@ let db: duckdb.AsyncDuckDB;
 let conn: duckdb.AsyncDuckDBConnection;
 let currentSource: DataSource = 'parquet';
 
+// Custom WebGL layer instance -- receives Float32Array directly from DuckDB
+const pointLayer = new PointLayer('wasm-points', {
+  pointSize:   10,
+  color:        [0.537, 0.706, 0.980, 0.9],   // #89b4fa
+  strokeColor:  [0.118, 0.118, 0.180, 1.0],   // #1e1e2e
+  strokeWidth:  1.5,
+});
+
+// Keeps the last query rows in sync for popup lookups
+let currentRows: CapitalRow[] = [];
+
 async function initDuck(): Promise<void> {
   const status = getEl('status');
   const bundle = await duckdb.selectBundle(JSDELIVR_BUNDLES);
@@ -63,67 +74,34 @@ async function initDuck(): Promise<void> {
   status.textContent = 'Ready (parquet)';
 }
 
-//  GeoJSON layer setup (runs once after map load) 
+// ── Custom WebGL layer setup (runs once after map load) ─────────────────────────
+// No GeoJSON source needed -- PointLayer owns its own GPU buffer.
 
 function setupLayers(): void {
-  // Source -- starts with an empty FeatureCollection
-  map.addSource('points', {
-    type: 'geojson',
-    data: { type: 'FeatureCollection', features: [] },
-  });
+  // Add the custom WebGL layer directly; it draws via gl.drawArrays(POINTS)
+  map.addLayer(pointLayer);
 
-  // 1) Circle layer -- rendered via WebGL, no DOM elements -> handles 1M points smoothly
-  map.addLayer({
-    id: 'points-circle',
-    type: 'circle',
-    source: 'points',
-    paint: {
-      'circle-radius': ['interpolate', ['linear'], ['zoom'], 2, 4, 8, 9],
-      'circle-color': '#89b4fa',
-      'circle-stroke-width': 1.5,
-      'circle-stroke-color': '#1e1e2e',
-      'circle-opacity': 0.85,
-    },
-  });
-
-  // 2) Symbol (label) layer -- show name at zoom >= 5
-  map.addLayer({
-    id: 'points-label',
-    type: 'symbol',
-    source: 'points',
-    minzoom: 5,
-    layout: {
-      'text-field': ['get', 'name'],
-      'text-size': 11,
-      'text-offset': [0, 1.2],
-      'text-anchor': 'top',
-      'text-allow-overlap': false,
-    },
-    paint: {
-      'text-color': '#cdd6f4',
-      'text-halo-color': '#1e1e2e',
-      'text-halo-width': 1.5,
-    },
-  });
-
-  // 3) Click -> popup (feature properties come directly from GeoJSON)
-  map.on('click', 'points-circle', e => {
-    const feature = e.features?.[0];
-    if (!feature) return;
-    const p = feature.properties as CapitalRow;
+  // Click -> find nearest point via screen-space proximity, then show popup
+  map.on('click', e => {
+    const idx = pointLayer.findNearest(map, e.lngLat, 12);
+    if (idx === -1) return;
+    const p = currentRows[idx];
     new maplibregl.Popup({ offset: 12 })
-      .setLngLat(e.lngLat)
+      .setLngLat([Number(p.lng), Number(p.lat)])
       .setHTML(`
         <b>${p.name}</b><br>
-         ${p.country}<br>
-         ${p.continent}<br>
-         ${Number(p.population).toLocaleString()}
+        🌍 ${p.country}<br>
+        🗺 ${p.continent}<br>
+        👥 ${Number(p.population).toLocaleString()}
       `)
       .addTo(map);
   });
 
-  map.on('mouseenter', 'points-circle', () => { map.getCanvas().style.cursor = 'pointer'; });
-  map.on('mouseleave', 'points-circle', () => { map.getCanvas().style.cursor = ''; });
+  // Cursor feedback: pointer when hovering near a point
+  map.on('mousemove', e => {
+    const hit = pointLayer.findNearest(map, e.lngLat, 10);
+    map.getCanvas().style.cursor = hit !== -1 ? 'pointer' : '';
+  });
 }
 
 //  Switch data source 
@@ -169,22 +147,21 @@ async function runQuery(): Promise<void> {
     const ms     = (performance.now() - t0).toFixed(1);
     const rows   = result.toArray().map(r => r.toJSON()) as CapitalRow[];
 
-    // Convert all rows into a single GeoJSON FeatureCollection.
-    // setData() -> single WebGL draw call, zero DOM manipulation.
-    const geojson: FeatureCollection = {
-      type: 'FeatureCollection',
-      features: rows
-        .filter(row => row.lng != null && row.lat != null)
-        .map(row => ({
-          type: 'Feature' as const,
-          geometry: { type: 'Point' as const, coordinates: [Number(row.lng), Number(row.lat)] },
-          properties: row,
-        })),
-    };
+    // Filter rows that have valid coordinates
+    currentRows = rows.filter(row => row.lng != null && row.lat != null);
 
-    (map.getSource('points') as maplibregl.GeoJSONSource)?.setData(geojson);
+    // Build a flat Float32Array: [lng0, lat0, lng1, lat1, ...]
+    // Zero JS object overhead -- data goes from DuckDB Arrow -> typed array -> GPU.
+    const coords = new Float32Array(currentRows.length * 2);
+    for (let i = 0; i < currentRows.length; i++) {
+      coords[i * 2]     = Number(currentRows[i].lng);
+      coords[i * 2 + 1] = Number(currentRows[i].lat);
+    }
 
-    status.textContent = `${rows.length} row(s)  ${ms} ms  ${currentSource}`;
+    // Single GPU buffer upload -- one draw call regardless of point count
+    pointLayer.setData(coords);
+
+    status.textContent = `${currentRows.length} row(s)  ${ms} ms  ${currentSource}`;
   } catch (err) {
     status.textContent = 'Error';
     alert((err as Error).message);
